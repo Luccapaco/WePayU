@@ -1,6 +1,5 @@
 package br.ufal.ic.p2.wepayu.models;
 
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoExisteException;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -14,7 +13,7 @@ public class Empregado {
     private Double comissao;
     private boolean sindicalizado;
     private List<CartaoPonto> cartoes = new ArrayList<>();
-
+    private List<Venda> vendas = new ArrayList<>();
 
     public Empregado(String nome, String endereco, String tipo, String salarioStr, String comissaoStr) {
         if (nome == null || nome.trim().isEmpty()) {
@@ -35,13 +34,13 @@ public class Empregado {
         }
         try {
             this.salario = Double.parseDouble(salarioStr.replace(",", "."));
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Salario deve ser numerico.");
         }
         if (this.salario < 0) {
             throw new IllegalArgumentException("Salario deve ser nao-negativo.");
         }
+
         if (tipo.equalsIgnoreCase("comissionado")) {
             if (comissaoStr == null) {
                 throw new IllegalArgumentException("Tipo nao aplicavel.");
@@ -51,21 +50,18 @@ public class Empregado {
             }
             try {
                 this.comissao = Double.parseDouble(comissaoStr.replace(",", "."));
-            }
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Comissao deve ser numerica.");
             }
             if (this.comissao < 0) {
                 throw new IllegalArgumentException("Comissao deve ser nao-negativa.");
             }
-        }
-        else {
+        } else {
             if (comissaoStr != null) {
                 throw new IllegalArgumentException("Tipo nao aplicavel.");
             }
             this.comissao = null;
         }
-
 
         this.id = "EMP" + contadorId++;
         this.nome = nome;
@@ -74,6 +70,7 @@ public class Empregado {
         this.sindicalizado = false;
     }
 
+    // ---- cartões ----
     public void adicionarCartao(CartaoPonto c) {
         cartoes.add(c);
     }
@@ -82,19 +79,21 @@ public class Empregado {
         return cartoes;
     }
 
+    // ---- vendas ----
+    public void adicionarVenda(Venda v) {
+        vendas.add(v);
+    }
+
+    public List<Venda> getVendas() {
+        return vendas;
+    }
+
+    // ---- getters ----
     public String getId() { return id; }
-    public String getNome() {
-        return nome;
-    }
-    public String getEndereco() {
-        return endereco;
-    }
-    public String getTipo() {
-        return tipo;
-    }
-    public double getSalario() {
-        return salario;
-    }
+    public String getNome() { return nome; }
+    public String getEndereco() { return endereco; }
+    public String getTipo() { return tipo; }
+    public double getSalario() { return salario; }
     public Double getComissao() { return comissao; }
     public boolean isSindicalizado() { return sindicalizado; }
 }
