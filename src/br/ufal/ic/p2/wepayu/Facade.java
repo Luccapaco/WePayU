@@ -10,6 +10,7 @@ public class Facade {
     }
 
     public void encerrarSistema(){
+        Database.encerrarSistema();
     }
 
     public String criarEmpregado(String nome, String endereco, String tipo, String salario) {
@@ -41,6 +42,16 @@ public class Facade {
                 }
                 return String.format("%.2f", e.getComissao()).replace('.', ',');
             case "sindicalizado": return String.valueOf(e.isSindicalizado());
+            case "idsindicato":
+                if (!e.isSindicalizado()) {
+                    throw new IllegalArgumentException("Empregado nao eh sindicalizado.");
+                }
+                return e.getIdSindicato();
+            case "taxasindical":
+                if (!e.isSindicalizado()) {
+                    throw new IllegalArgumentException("Empregado nao eh sindicalizado.");
+                }
+                return String.format("%.2f", e.getTaxaSindical()).replace('.', ',');
             default: throw new IllegalArgumentException("Atributo nao existe.");
         }
     }
@@ -61,6 +72,10 @@ public class Facade {
         Database.lancaVenda(empId, data, valor);
     }
 
+    public void lancaTaxaServico(String membroId, String data, String valor) {
+        Database.lancaTaxaServico(membroId, data, valor);
+    }
+
     public String getHorasNormaisTrabalhadas(String empId, String dataInicial, String dataFinal) {
         return Database.getHorasNormaisTrabalhadas(empId, dataInicial, dataFinal);
     }
@@ -72,4 +87,15 @@ public class Facade {
         return Database.getVendasRealizadas(empId, dataInicial, dataFinal);
     }
 
+    public String getTaxasServico(String empId, String dataInicial, String dataFinal) {
+        return Database.getTaxasServico(empId, dataInicial, dataFinal);
+    }
+
+    public void alteraEmpregado(String empId, String atributo, String valor) {
+        Database.alteraEmpregado(empId, atributo, valor);
+    }
+
+    public void alteraEmpregado(String empId, String atributo, String valor, String idSindicato, String taxaSindical) {
+        Database.alteraEmpregado(empId, atributo, valor, idSindicato, taxaSindical);
+    }
 }

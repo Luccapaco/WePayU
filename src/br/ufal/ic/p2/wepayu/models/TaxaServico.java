@@ -4,15 +4,11 @@ import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-public class Venda implements Serializable {
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-
-public class Venda {
+public class TaxaServico implements Serializable {
     private String data;
     private double valor;
 
-    public Venda(String data, String valorStr) {
+    public TaxaServico(String data, String valorStr) {
         if (data == null || data.trim().isEmpty()) {
             throw new IllegalArgumentException("Data invalida.");
         }
