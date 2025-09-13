@@ -1,6 +1,8 @@
 package br.ufal.ic.p2.wepayu.models;
 
-public class CartaoPonto {
+import java.io.Serializable;
+
+public class CartaoPonto implements Serializable {
     private String data;
     private double horas;
 
