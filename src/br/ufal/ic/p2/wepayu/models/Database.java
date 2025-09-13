@@ -162,6 +162,7 @@ public class Database {
         e.adicionarVenda(v);
     }
 
+
     public static void lancaTaxaServico(String membroId, String data, String valor) {
         if (membroId == null || membroId.trim().isEmpty()) {
             throw new IllegalArgumentException("Identificacao do membro nao pode ser nula.");
@@ -192,6 +193,7 @@ public class Database {
     public static String getHorasExtrasTrabalhadas(String empId, String dataInicial, String dataFinal) {
         return formatarNumero(calcularHoras(empId, dataInicial, dataFinal, true));
     }
+
 
     public static String getTaxasServico(String empId, String dataInicial, String dataFinal) {
         Empregado e = getEmpregado(empId);
@@ -332,6 +334,7 @@ public class Database {
         return String.format("%.2f", valor).replace('.', ',');
     }
 
+
     private static void carregar() {
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(ARQUIVO))) {
             Object obj = in.readObject();
@@ -362,5 +365,10 @@ public class Database {
         if (f.exists()) {
             f.delete();
         }
+      
+    public static void zerarSistema() {
+        empregados.clear();
+        Empregado.resetContador();
+
     }
 }

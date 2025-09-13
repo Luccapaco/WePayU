@@ -5,6 +5,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 public class Venda implements Serializable {
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
+public class Venda {
     private String data;
     private double valor;
 

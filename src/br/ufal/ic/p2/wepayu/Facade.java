@@ -98,5 +98,4 @@ public class Facade {
     public void alteraEmpregado(String empId, String atributo, String valor, String idSindicato, String taxaSindical) {
         Database.alteraEmpregado(empId, atributo, valor, idSindicato, taxaSindical);
     }
-
 }
