@@ -25,6 +25,9 @@ public class Facade {
     }
 
     public String getAtributoEmpregado(String empId, String atributo) {
+        if (atributo == null) {
+            throw new IllegalArgumentException("Atributo nao pode ser nulo.");
+        }
         Empregado e = Database.getEmpregado(empId);
 
         switch (atributo.toLowerCase()) {
@@ -54,11 +57,19 @@ public class Facade {
         Database.lancaCartao(empId, data, horas);
     }
 
+    public void lancaVenda(String empId, String data, String valor) {
+        Database.lancaVenda(empId, data, valor);
+    }
+
     public String getHorasNormaisTrabalhadas(String empId, String dataInicial, String dataFinal) {
         return Database.getHorasNormaisTrabalhadas(empId, dataInicial, dataFinal);
     }
     public String getHorasExtrasTrabalhadas(String empId, String dataInicial, String dataFinal) {
         return Database.getHorasExtrasTrabalhadas(empId, dataInicial, dataFinal);
+    }
+
+    public String getVendasRealizadas(String empId, String dataInicial, String dataFinal) {
+        return Database.getVendasRealizadas(empId, dataInicial, dataFinal);
     }
 
 }

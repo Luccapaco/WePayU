@@ -2,6 +2,7 @@ package br.ufal.ic.p2.wepayu.models;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class Empregado {
     private static int contadorId = 1;
@@ -76,7 +77,7 @@ public class Empregado {
     }
 
     public List<CartaoPonto> getCartoes() {
-        return cartoes;
+        return Collections.unmodifiableList(cartoes);
     }
 
     // ---- vendas ----
@@ -85,7 +86,7 @@ public class Empregado {
     }
 
     public List<Venda> getVendas() {
-        return vendas;
+        return Collections.unmodifiableList(vendas);
     }
 
     // ---- getters ----
@@ -96,4 +97,8 @@ public class Empregado {
     public double getSalario() { return salario; }
     public Double getComissao() { return comissao; }
     public boolean isSindicalizado() { return sindicalizado; }
+
+    public static void resetContador() {
+        contadorId = 1;
+    }
 }
