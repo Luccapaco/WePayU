@@ -1,5 +1,8 @@
 package br.ufal.ic.p2.wepayu.models;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
 public class Venda {
     private String data;
     private double valor;
@@ -8,6 +11,8 @@ public class Venda {
         if (data == null || data.trim().isEmpty()) {
             throw new IllegalArgumentException("Data invalida.");
         }
+        validarData(data);
+
         if (valorStr == null || valorStr.trim().isEmpty()) {
             throw new IllegalArgumentException("Valor deve ser positivo.");
         }
@@ -23,6 +28,16 @@ public class Venda {
         }
 
         this.data = data;
+    }
+
+    private void validarData(String data) {
+        SimpleDateFormat sdf = new SimpleDateFormat("d/M/yyyy");
+        sdf.setLenient(false);
+        try {
+            sdf.parse(data);
+        } catch (ParseException e) {
+            throw new IllegalArgumentException("Data invalida.");
+        }
     }
 
     public String getData() {

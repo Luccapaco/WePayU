@@ -72,12 +72,54 @@ public class Database {
         e.adicionarCartao(cartao);
     }
 
+    public static void lancaVenda(String empId, String data, String valor) {
+        if (empId == null || empId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Identificacao do empregado nao pode ser nula.");
+        }
+
+        Empregado e = getEmpregado(empId);
+
+        if (!e.getTipo().equals("comissionado")) {
+            throw new IllegalArgumentException("Empregado nao eh comissionado.");
+        }
+
+        validarData(data, false);
+
+        Venda v = new Venda(data, valor);
+        e.adicionarVenda(v);
+    }
+
     public static String getHorasNormaisTrabalhadas(String empId, String dataInicial, String dataFinal) {
         return formatarNumero(calcularHoras(empId, dataInicial, dataFinal, false));
     }
 
     public static String getHorasExtrasTrabalhadas(String empId, String dataInicial, String dataFinal) {
         return formatarNumero(calcularHoras(empId, dataInicial, dataFinal, true));
+    }
+
+    public static String getVendasRealizadas(String empId, String dataInicial, String dataFinal) {
+        Empregado e = getEmpregado(empId);
+
+        if (!e.getTipo().equals("comissionado")) {
+            throw new IllegalArgumentException("Empregado nao eh comissionado.");
+        }
+
+        Date inicio = validarData(dataInicial, true);
+        Date fim = validarData(dataFinal, false);
+
+        if (inicio.after(fim)) {
+            throw new IllegalArgumentException("Data inicial nao pode ser posterior aa data final.");
+        }
+
+        double total = 0;
+        for (Venda v : e.getVendas()) {
+            Date data = validarData(v.getData(), false);
+            if (!data.before(inicio) && data.before(fim)) {
+                total += v.getValor();
+            }
+        }
+
+        return formatarValor(total);
     }
 
     private static double calcularHoras(String empId, String dataInicial, String dataFinal, boolean extras) {
@@ -165,7 +207,12 @@ public class Database {
         }
     }
 
+    private static String formatarValor(double valor) {
+        return String.format("%.2f", valor).replace('.', ',');
+    }
+
     public static void zerarSistema() {
         empregados.clear();
+        Empregado.resetContador();
     }
 }
