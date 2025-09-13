@@ -1,9 +1,11 @@
 package br.ufal.ic.p2.wepayu.models;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 
-public class Empregado {
+public class Empregado implements Serializable {
     private static int contadorId = 1;
     private String id;
     private String nome;
@@ -12,8 +14,11 @@ public class Empregado {
     private double salario;
     private Double comissao;
     private boolean sindicalizado;
+    private String idSindicato;
+    private double taxaSindical;
     private List<CartaoPonto> cartoes = new ArrayList<>();
     private List<Venda> vendas = new ArrayList<>();
+    private List<TaxaServico> taxas = new ArrayList<>();
 
     public Empregado(String nome, String endereco, String tipo, String salarioStr, String comissaoStr) {
         if (nome == null || nome.trim().isEmpty()) {
@@ -68,6 +73,8 @@ public class Empregado {
         this.endereco = endereco;
         this.tipo = tipo.toLowerCase();
         this.sindicalizado = false;
+        this.idSindicato = null;
+        this.taxaSindical = 0;
     }
 
     // ---- cartões ----
@@ -76,7 +83,7 @@ public class Empregado {
     }
 
     public List<CartaoPonto> getCartoes() {
-        return cartoes;
+        return Collections.unmodifiableList(cartoes);
     }
 
     // ---- vendas ----
@@ -85,8 +92,21 @@ public class Empregado {
     }
 
     public List<Venda> getVendas() {
-        return vendas;
+        return Collections.unmodifiableList(vendas);
     }
+
+    // ---- taxas de servico ----
+    public void adicionarTaxa(TaxaServico t) {
+        taxas.add(t);
+    }
+
+    public List<TaxaServico> getTaxas() {
+        return Collections.unmodifiableList(taxas);
+    }
+
+    public void setSindicalizado(boolean valor) { this.sindicalizado = valor; }
+    public void setIdSindicato(String id) { this.idSindicato = id; }
+    public void setTaxaSindical(double taxa) { this.taxaSindical = taxa; }
 
     // ---- getters ----
     public String getId() { return id; }
@@ -96,4 +116,10 @@ public class Empregado {
     public double getSalario() { return salario; }
     public Double getComissao() { return comissao; }
     public boolean isSindicalizado() { return sindicalizado; }
+    public String getIdSindicato() { return idSindicato; }
+    public double getTaxaSindical() { return taxaSindical; }
+
+    public static void resetContador() {
+        contadorId = 1;
+    }
 }
