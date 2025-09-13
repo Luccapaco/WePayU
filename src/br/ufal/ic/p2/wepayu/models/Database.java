@@ -66,6 +66,8 @@ public class Database {
         String attr = atributo == null ? "" : atributo.trim().toLowerCase();
 
         switch (attr) {
+
+        switch (atributo.toLowerCase()) {
             case "nome":
                 if (valor == null || valor.trim().isEmpty()) {
                     throw new IllegalArgumentException("Nome nao pode ser nulo.");
@@ -151,6 +153,22 @@ public class Database {
             default:
                 throw new IllegalArgumentException("Atributo nao existe.");
         }
+
+        if (!"sindicalizado".equalsIgnoreCase(atributo)) {
+            throw new IllegalArgumentException("Atributo nao existe.");
+        }
+
+        if (valor == null || (!valor.equalsIgnoreCase("true") && !valor.equalsIgnoreCase("false"))) {
+            throw new IllegalArgumentException("Valor deve ser true ou false.");
+        }
+
+        if (valor.equalsIgnoreCase("true")) {
+            throw new IllegalArgumentException("Identificacao do sindicato nao pode ser nula.");
+        }
+
+        e.setSindicalizado(false);
+        e.setIdSindicato(null);
+        e.setTaxaSindical(0);
     }
 
     public static void alteraEmpregado(String empId, String atributo, String valor,
@@ -159,6 +177,8 @@ public class Database {
         String attr = atributo == null ? "" : atributo.trim().toLowerCase();
 
         if (!"sindicalizado".equals(attr)) {
+
+        if (!"sindicalizado".equalsIgnoreCase(atributo)) {
             throw new IllegalArgumentException("Atributo nao existe.");
         }
 
@@ -206,6 +226,8 @@ public class Database {
         String attr = atributo == null ? "" : atributo.trim().toLowerCase();
 
         if (!"tipo".equals(attr)) {
+
+        if (!"tipo".equalsIgnoreCase(atributo)) {
             throw new IllegalArgumentException("Atributo nao existe.");
         }
 
@@ -268,6 +290,8 @@ public class Database {
         String attr = atributo == null ? "" : atributo.trim().toLowerCase();
 
         if (!"metodopagamento".equals(attr)) {
+
+        if (!"metodopagamento".equalsIgnoreCase(atributo)) {
             throw new IllegalArgumentException("Atributo nao existe.");
         }
 

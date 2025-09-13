@@ -30,6 +30,12 @@ public class Facade {
             throw new IllegalArgumentException("Atributo nao pode ser nulo.");
         }
         Empregado e = Database.getEmpregado(emp);
+      
+    public String getAtributoEmpregado(String empId, String atributo) {
+        if (atributo == null) {
+            throw new IllegalArgumentException("Atributo nao pode ser nulo.");
+        }
+        Empregado e = Database.getEmpregado(empId);
 
         switch (atributo.toLowerCase()) {
             case "nome": return e.getNome();
@@ -110,6 +116,17 @@ public class Facade {
 
     public void alteraEmpregado(String emp, String atributo, String valor) {
         Database.alteraEmpregado(emp, atributo, valor);
+      
+    public void lancaVenda(String empId, String data, String valor) {
+        Database.lancaVenda(empId, data, valor);
+    }
+
+    public void lancaTaxaServico(String membroId, String data, String valor) {
+        Database.lancaTaxaServico(membroId, data, valor);
+    }
+
+    public String getHorasNormaisTrabalhadas(String empId, String dataInicial, String dataFinal) {
+        return Database.getHorasNormaisTrabalhadas(empId, dataInicial, dataFinal);
     }
 
     public void alteraEmpregado(String emp, String atributo, String valor, String valor2) {
@@ -124,4 +141,31 @@ public class Facade {
         Database.alteraEmpregado(emp, atributo, valor1, banco, agencia, contaCorrente);
     }
 
+    public String getVendasRealizadas(String empId, String dataInicial, String dataFinal) {
+        return Database.getVendasRealizadas(empId, dataInicial, dataFinal);
+    }
+
+    public String getTaxasServico(String empId, String dataInicial, String dataFinal) {
+        return Database.getTaxasServico(empId, dataInicial, dataFinal);
+    }
+
+    public void alteraEmpregado(String empId, String atributo, String valor) {
+        Database.alteraEmpregado(empId, atributo, valor);
+    }
+
+    public void alteraEmpregado(String empId, String atributo, String valor, String valor2) {
+        Database.alteraEmpregado(empId, atributo, valor, valor2);
+    }
+
+    public void alteraEmpregado(String empId, String atributo, String valor, String idSindicato, String taxaSindical) {
+        Database.alteraEmpregado(empId, atributo, valor, idSindicato, taxaSindical);
+    }
+
+    public void alteraEmpregado(String empId, String atributo, String valor1, String banco, String agencia, String contaCorrente) {
+        Database.alteraEmpregado(empId, atributo, valor1, banco, agencia, contaCorrente);
+    }
+
+    public void alteraEmpregado(String empId, String atributo, String valor, String idSindicato, String taxaSindical) {
+        Database.alteraEmpregado(empId, atributo, valor, idSindicato, taxaSindical);
+    }
 }

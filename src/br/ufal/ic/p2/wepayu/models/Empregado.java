@@ -115,7 +115,6 @@ public class Empregado implements Serializable {
     public void setSindicalizado(boolean valor) { this.sindicalizado = valor; }
     public void setIdSindicato(String id) { this.idSindicato = id; }
     public void setTaxaSindical(double taxa) { this.taxaSindical = taxa; }
-
     public void setNome(String nome) { this.nome = nome; }
     public void setEndereco(String endereco) { this.endereco = endereco; }
     public void setTipo(String tipo) { this.tipo = tipo; }
@@ -140,7 +139,6 @@ public class Empregado implements Serializable {
     public String getBanco() { return banco; }
     public String getAgencia() { return agencia; }
     public String getContaCorrente() { return contaCorrente; }
-
     public static void resetContador() {
         contadorId = 1;
     }
