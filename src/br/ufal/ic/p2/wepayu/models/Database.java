@@ -365,10 +365,5 @@ public class Database {
         if (f.exists()) {
             f.delete();
         }
-      
-    public static void zerarSistema() {
-        empregados.clear();
-        Empregado.resetContador();
-
     }
 }
