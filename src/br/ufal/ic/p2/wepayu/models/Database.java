@@ -63,6 +63,9 @@ public class Database {
 
     public static void alteraEmpregado(String empId, String atributo, String valor) {
         Empregado e = getEmpregado(empId);
+        String attr = atributo == null ? "" : atributo.trim().toLowerCase();
+
+        switch (attr) {
 
         switch (atributo.toLowerCase()) {
             case "nome":
@@ -171,6 +174,9 @@ public class Database {
     public static void alteraEmpregado(String empId, String atributo, String valor,
                                        String idSindicato, String taxaSindical) {
         Empregado e = getEmpregado(empId);
+        String attr = atributo == null ? "" : atributo.trim().toLowerCase();
+
+        if (!"sindicalizado".equals(attr)) {
 
         if (!"sindicalizado".equalsIgnoreCase(atributo)) {
             throw new IllegalArgumentException("Atributo nao existe.");
@@ -217,6 +223,9 @@ public class Database {
 
     public static void alteraEmpregado(String empId, String atributo, String valor, String valor2) {
         Empregado e = getEmpregado(empId);
+        String attr = atributo == null ? "" : atributo.trim().toLowerCase();
+
+        if (!"tipo".equals(attr)) {
 
         if (!"tipo".equalsIgnoreCase(atributo)) {
             throw new IllegalArgumentException("Atributo nao existe.");
@@ -278,6 +287,9 @@ public class Database {
 
     public static void alteraEmpregado(String empId, String atributo, String valor1, String banco, String agencia, String contaCorrente) {
         Empregado e = getEmpregado(empId);
+        String attr = atributo == null ? "" : atributo.trim().toLowerCase();
+
+        if (!"metodopagamento".equals(attr)) {
 
         if (!"metodopagamento".equalsIgnoreCase(atributo)) {
             throw new IllegalArgumentException("Atributo nao existe.");

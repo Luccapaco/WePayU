@@ -25,6 +25,12 @@ public class Facade {
         return e.getId();
     }
 
+    public String getAtributoEmpregado(String emp, String atributo) {
+        if (atributo == null) {
+            throw new IllegalArgumentException("Atributo nao pode ser nulo.");
+        }
+        Empregado e = Database.getEmpregado(emp);
+      
     public String getAtributoEmpregado(String empId, String atributo) {
         if (atributo == null) {
             throw new IllegalArgumentException("Atributo nao pode ser nulo.");
@@ -77,14 +83,40 @@ public class Facade {
         return Database.getEmpregadoPorNome(nome, indice);
     }
 
-    public void removerEmpregado(String empId){
-        Database.removerEmpregado(empId);
+    public void removerEmpregado(String emp){
+        Database.removerEmpregado(emp);
     }
 
-    public void lancaCartao(String empId, String data, String horas) {
-        Database.lancaCartao(empId, data, horas);
+    public void lancaCartao(String emp, String data, String horas) {
+        Database.lancaCartao(emp, data, horas);
     }
 
+    public void lancaVenda(String emp, String data, String valor) {
+        Database.lancaVenda(emp, data, valor);
+    }
+
+    public void lancaTaxaServico(String membroId, String data, String valor) {
+        Database.lancaTaxaServico(membroId, data, valor);
+    }
+
+    public String getHorasNormaisTrabalhadas(String emp, String dataInicial, String dataFinal) {
+        return Database.getHorasNormaisTrabalhadas(emp, dataInicial, dataFinal);
+    }
+    public String getHorasExtrasTrabalhadas(String emp, String dataInicial, String dataFinal) {
+        return Database.getHorasExtrasTrabalhadas(emp, dataInicial, dataFinal);
+    }
+
+    public String getVendasRealizadas(String emp, String dataInicial, String dataFinal) {
+        return Database.getVendasRealizadas(emp, dataInicial, dataFinal);
+    }
+
+    public String getTaxasServico(String emp, String dataInicial, String dataFinal) {
+        return Database.getTaxasServico(emp, dataInicial, dataFinal);
+    }
+
+    public void alteraEmpregado(String emp, String atributo, String valor) {
+        Database.alteraEmpregado(emp, atributo, valor);
+      
     public void lancaVenda(String empId, String data, String valor) {
         Database.lancaVenda(empId, data, valor);
     }
@@ -96,8 +128,17 @@ public class Facade {
     public String getHorasNormaisTrabalhadas(String empId, String dataInicial, String dataFinal) {
         return Database.getHorasNormaisTrabalhadas(empId, dataInicial, dataFinal);
     }
-    public String getHorasExtrasTrabalhadas(String empId, String dataInicial, String dataFinal) {
-        return Database.getHorasExtrasTrabalhadas(empId, dataInicial, dataFinal);
+
+    public void alteraEmpregado(String emp, String atributo, String valor, String valor2) {
+        Database.alteraEmpregado(emp, atributo, valor, valor2);
+    }
+
+    public void alteraEmpregado(String emp, String atributo, String valor, String idSindicato, String taxaSindical) {
+        Database.alteraEmpregado(emp, atributo, valor, idSindicato, taxaSindical);
+    }
+
+    public void alteraEmpregado(String emp, String atributo, String valor1, String banco, String agencia, String contaCorrente) {
+        Database.alteraEmpregado(emp, atributo, valor1, banco, agencia, contaCorrente);
     }
 
     public String getVendasRealizadas(String empId, String dataInicial, String dataFinal) {
