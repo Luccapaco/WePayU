@@ -37,8 +37,8 @@ public class Facade {
             case "tipo": return e.getTipo();
             case "salario": return String.format("%.2f", e.getSalario()).replace('.', ',');
             case "comissao":
-                if (e.getComissao() == null) {
-                    throw new IllegalArgumentException("Atributo nao existe.");
+                if (!"comissionado".equals(e.getTipo())) {
+                    throw new IllegalArgumentException("Empregado nao eh comissionado.");
                 }
                 return String.format("%.2f", e.getComissao()).replace('.', ',');
             case "sindicalizado": return String.valueOf(e.isSindicalizado());
@@ -52,6 +52,23 @@ public class Facade {
                     throw new IllegalArgumentException("Empregado nao eh sindicalizado.");
                 }
                 return String.format("%.2f", e.getTaxaSindical()).replace('.', ',');
+            case "metodopagamento":
+                return e.getMetodoPagamento();
+            case "banco":
+                if (!"banco".equals(e.getMetodoPagamento())) {
+                    throw new IllegalArgumentException("Empregado nao recebe em banco.");
+                }
+                return e.getBanco();
+            case "agencia":
+                if (!"banco".equals(e.getMetodoPagamento())) {
+                    throw new IllegalArgumentException("Empregado nao recebe em banco.");
+                }
+                return e.getAgencia();
+            case "contacorrente":
+                if (!"banco".equals(e.getMetodoPagamento())) {
+                    throw new IllegalArgumentException("Empregado nao recebe em banco.");
+                }
+                return e.getContaCorrente();
             default: throw new IllegalArgumentException("Atributo nao existe.");
         }
     }
@@ -93,6 +110,18 @@ public class Facade {
 
     public void alteraEmpregado(String empId, String atributo, String valor) {
         Database.alteraEmpregado(empId, atributo, valor);
+    }
+
+    public void alteraEmpregado(String empId, String atributo, String valor, String valor2) {
+        Database.alteraEmpregado(empId, atributo, valor, valor2);
+    }
+
+    public void alteraEmpregado(String empId, String atributo, String valor, String idSindicato, String taxaSindical) {
+        Database.alteraEmpregado(empId, atributo, valor, idSindicato, taxaSindical);
+    }
+
+    public void alteraEmpregado(String empId, String atributo, String valor1, String banco, String agencia, String contaCorrente) {
+        Database.alteraEmpregado(empId, atributo, valor1, banco, agencia, contaCorrente);
     }
 
     public void alteraEmpregado(String empId, String atributo, String valor, String idSindicato, String taxaSindical) {

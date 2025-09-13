@@ -64,6 +64,93 @@ public class Database {
     public static void alteraEmpregado(String empId, String atributo, String valor) {
         Empregado e = getEmpregado(empId);
 
+        switch (atributo.toLowerCase()) {
+            case "nome":
+                if (valor == null || valor.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Nome nao pode ser nulo.");
+                }
+                e.setNome(valor);
+                break;
+            case "endereco":
+                if (valor == null || valor.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Endereco nao pode ser nulo.");
+                }
+                e.setEndereco(valor);
+                break;
+            case "tipo":
+                if (valor == null ||
+                        !(valor.equalsIgnoreCase("horista") || valor.equalsIgnoreCase("assalariado") || valor.equalsIgnoreCase("comissionado"))) {
+                    throw new IllegalArgumentException("Tipo invalido.");
+                }
+                e.setTipo(valor.toLowerCase());
+                if (!valor.equalsIgnoreCase("comissionado")) {
+                    e.setComissao(null);
+                }
+                break;
+            case "salario":
+                if (valor == null || valor.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Salario nao pode ser nulo.");
+                }
+                double sal;
+                try {
+                    sal = Double.parseDouble(valor.replace(",", "."));
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException("Salario deve ser numerico.");
+                }
+                if (sal < 0) {
+                    throw new IllegalArgumentException("Salario deve ser nao-negativo.");
+                }
+                e.setSalario(sal);
+                break;
+            case "comissao":
+                if (!"comissionado".equals(e.getTipo())) {
+                    throw new IllegalArgumentException("Empregado nao eh comissionado.");
+                }
+                if (valor == null || valor.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Comissao nao pode ser nula.");
+                }
+                double com;
+                try {
+                    com = Double.parseDouble(valor.replace(",", "."));
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException("Comissao deve ser numerica.");
+                }
+                if (com < 0) {
+                    throw new IllegalArgumentException("Comissao deve ser nao-negativa.");
+                }
+                e.setComissao(com);
+                break;
+            case "metodopagamento":
+                if (valor == null) {
+                    throw new IllegalArgumentException("Metodo de pagamento invalido.");
+                }
+                if (valor.equalsIgnoreCase("emmaos")) {
+                    e.setMetodoPagamento("emMaos");
+                    e.setBanco(null); e.setAgencia(null); e.setContaCorrente(null);
+                } else if (valor.equalsIgnoreCase("correios")) {
+                    e.setMetodoPagamento("correios");
+                    e.setBanco(null); e.setAgencia(null); e.setContaCorrente(null);
+                } else if (valor.equalsIgnoreCase("banco")) {
+                    throw new IllegalArgumentException("Banco nao pode ser nulo.");
+                } else {
+                    throw new IllegalArgumentException("Metodo de pagamento invalido.");
+                }
+                break;
+            case "sindicalizado":
+                if (valor == null || (!valor.equalsIgnoreCase("true") && !valor.equalsIgnoreCase("false"))) {
+                    throw new IllegalArgumentException("Valor deve ser true ou false.");
+                }
+                if (valor.equalsIgnoreCase("true")) {
+                    throw new IllegalArgumentException("Identificacao do sindicato nao pode ser nula.");
+                }
+                e.setSindicalizado(false);
+                e.setIdSindicato(null);
+                e.setTaxaSindical(0);
+                break;
+            default:
+                throw new IllegalArgumentException("Atributo nao existe.");
+        }
+
         if (!"sindicalizado".equalsIgnoreCase(atributo)) {
             throw new IllegalArgumentException("Atributo nao existe.");
         }
@@ -128,6 +215,94 @@ public class Database {
         e.setTaxaSindical(taxa);
     }
 
+    public static void alteraEmpregado(String empId, String atributo, String valor, String valor2) {
+        Empregado e = getEmpregado(empId);
+
+        if (!"tipo".equalsIgnoreCase(atributo)) {
+            throw new IllegalArgumentException("Atributo nao existe.");
+        }
+
+        if (valor == null ||
+                !(valor.equalsIgnoreCase("horista") || valor.equalsIgnoreCase("assalariado") || valor.equalsIgnoreCase("comissionado"))) {
+            throw new IllegalArgumentException("Tipo invalido.");
+        }
+
+        if (valor.equalsIgnoreCase("horista")) {
+            if (valor2 == null || valor2.trim().isEmpty()) {
+                throw new IllegalArgumentException("Salario nao pode ser nulo.");
+            }
+            double sal;
+            try {
+                sal = Double.parseDouble(valor2.replace(",", "."));
+            } catch (NumberFormatException ex) {
+                throw new IllegalArgumentException("Salario deve ser numerico.");
+            }
+            if (sal < 0) {
+                throw new IllegalArgumentException("Salario deve ser nao-negativo.");
+            }
+            e.setTipo("horista");
+            e.setSalario(sal);
+            e.setComissao(null);
+        } else if (valor.equalsIgnoreCase("comissionado")) {
+            if (valor2 == null || valor2.trim().isEmpty()) {
+                throw new IllegalArgumentException("Comissao nao pode ser nula.");
+            }
+            double com;
+            try {
+                com = Double.parseDouble(valor2.replace(",", "."));
+            } catch (NumberFormatException ex) {
+                throw new IllegalArgumentException("Comissao deve ser numerica.");
+            }
+            if (com < 0) {
+                throw new IllegalArgumentException("Comissao deve ser nao-negativa.");
+            }
+            e.setTipo("comissionado");
+            e.setComissao(com);
+        } else { // assalariado
+            e.setTipo("assalariado");
+            e.setComissao(null);
+            if (valor2 != null && !valor2.trim().isEmpty()) {
+                double sal;
+                try {
+                    sal = Double.parseDouble(valor2.replace(",", "."));
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException("Salario deve ser numerico.");
+                }
+                if (sal < 0) {
+                    throw new IllegalArgumentException("Salario deve ser nao-negativo.");
+                }
+                e.setSalario(sal);
+            }
+        }
+    }
+
+    public static void alteraEmpregado(String empId, String atributo, String valor1, String banco, String agencia, String contaCorrente) {
+        Empregado e = getEmpregado(empId);
+
+        if (!"metodopagamento".equalsIgnoreCase(atributo)) {
+            throw new IllegalArgumentException("Atributo nao existe.");
+        }
+
+        if (valor1 == null || !valor1.equalsIgnoreCase("banco")) {
+            throw new IllegalArgumentException("Metodo de pagamento invalido.");
+        }
+
+        if (banco == null || banco.trim().isEmpty()) {
+            throw new IllegalArgumentException("Banco nao pode ser nulo.");
+        }
+        if (agencia == null || agencia.trim().isEmpty()) {
+            throw new IllegalArgumentException("Agencia nao pode ser nulo.");
+        }
+        if (contaCorrente == null || contaCorrente.trim().isEmpty()) {
+            throw new IllegalArgumentException("Conta corrente nao pode ser nulo.");
+        }
+
+        e.setMetodoPagamento("banco");
+        e.setBanco(banco);
+        e.setAgencia(agencia);
+        e.setContaCorrente(contaCorrente);
+    }
+
     public static void lancaCartao(String empId, String data, String horas) {
         if (empId == null || empId.trim().isEmpty()) {
             throw new IllegalArgumentException("Identificacao do empregado nao pode ser nula.");
@@ -162,7 +337,6 @@ public class Database {
         e.adicionarVenda(v);
     }
 
-
     public static void lancaTaxaServico(String membroId, String data, String valor) {
         if (membroId == null || membroId.trim().isEmpty()) {
             throw new IllegalArgumentException("Identificacao do membro nao pode ser nula.");
@@ -193,7 +367,6 @@ public class Database {
     public static String getHorasExtrasTrabalhadas(String empId, String dataInicial, String dataFinal) {
         return formatarNumero(calcularHoras(empId, dataInicial, dataFinal, true));
     }
-
 
     public static String getTaxasServico(String empId, String dataInicial, String dataFinal) {
         Empregado e = getEmpregado(empId);
@@ -333,7 +506,6 @@ public class Database {
     private static String formatarValor(double valor) {
         return String.format("%.2f", valor).replace('.', ',');
     }
-
 
     private static void carregar() {
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(ARQUIVO))) {
