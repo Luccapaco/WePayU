@@ -66,12 +66,11 @@ public class Database {
             throw new IllegalArgumentException("Empregado nao eh horista.");
         }
 
-        validarData(data, false); // valida a data do cartão
+        validarData(data, false);
 
         CartaoPonto cartao = new CartaoPonto(data, horas);
         e.adicionarCartao(cartao);
     }
-
 
     public static String getHorasNormaisTrabalhadas(String empId, String dataInicial, String dataFinal) {
         return formatarNumero(calcularHoras(empId, dataInicial, dataFinal, false));
@@ -100,7 +99,8 @@ public class Database {
         for (CartaoPonto c : e.getCartoes()) {
             Date data = validarData(c.getData(), false);
 
-            if (!data.before(inicio) && !data.after(fim)) {
+            // intervalo [início, fim)
+            if (!data.before(inicio) && data.before(fim)) {
                 horasPorDia.put(c.getData(), horasPorDia.getOrDefault(c.getData(), 0.0) + c.getHoras());
             }
         }
@@ -148,17 +148,11 @@ public class Database {
             return sdf.parse(data);
 
         } catch (NumberFormatException e) {
-            if (inicial) {
-                throw new IllegalArgumentException("Data inicial invalida.");
-            } else {
-                throw new IllegalArgumentException("Data final invalida.");
-            }
+            if (inicial) throw new IllegalArgumentException("Data inicial invalida.");
+            else throw new IllegalArgumentException("Data final invalida.");
         } catch (ParseException e) {
-            if (inicial) {
-                throw new IllegalArgumentException("Data inicial invalida.");
-            } else {
-                throw new IllegalArgumentException("Data final invalida.");
-            }
+            if (inicial) throw new IllegalArgumentException("Data inicial invalida.");
+            else throw new IllegalArgumentException("Data final invalida.");
         }
     }
 
@@ -166,8 +160,8 @@ public class Database {
         if (valor == (long) valor) {
             return String.valueOf((long) valor); // sem casas decimais
         } else {
-            String s = String.format(Locale.US, "%.2f", valor); // força 2 decimais
-            return s.replace('.', ','); // vírgula como separador
+            String s = String.valueOf(valor);
+            return s.replace('.', ','); // usa vírgula se decimal
         }
     }
 
