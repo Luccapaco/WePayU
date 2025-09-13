@@ -150,6 +150,22 @@ public class Database {
             default:
                 throw new IllegalArgumentException("Atributo nao existe.");
         }
+
+        if (!"sindicalizado".equalsIgnoreCase(atributo)) {
+            throw new IllegalArgumentException("Atributo nao existe.");
+        }
+
+        if (valor == null || (!valor.equalsIgnoreCase("true") && !valor.equalsIgnoreCase("false"))) {
+            throw new IllegalArgumentException("Valor deve ser true ou false.");
+        }
+
+        if (valor.equalsIgnoreCase("true")) {
+            throw new IllegalArgumentException("Identificacao do sindicato nao pode ser nula.");
+        }
+
+        e.setSindicalizado(false);
+        e.setIdSindicato(null);
+        e.setTaxaSindical(0);
     }
 
     public static void alteraEmpregado(String empId, String atributo, String valor,
