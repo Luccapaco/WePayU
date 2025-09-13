@@ -39,7 +39,7 @@ expecterror "Agenda de pagamento nao esta disponivel" alteraEmpregado emp=${id1}
 expecterror "Agenda de pagamento nao esta disponivel" alteraEmpregado emp=${id1} \
 	atributo=agendaPagamento valor1="semanal 2 3"
 expecterror "Agenda de pagamento nao esta disponivel" alteraEmpregado emp=${id1} \
-	atributo=agendaPagamento valor1="todo dia"
+	atributo=agendaPagamento valor1="todoooooooooooo dia"
 
 # testando se agendas de pagamento modificadas funcionam corretamente
 # primeiro caso: empregado horista que querem receber por mes
