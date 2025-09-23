@@ -37,10 +37,26 @@ public class Facade {
             case "tipo": return e.getTipo();
             case "salario": return String.format("%.2f", e.getSalario()).replace('.', ',');
             case "comissao":
-                if (e.getComissao() == null) {
-                    throw new IllegalArgumentException("Atributo nao existe.");
+                if (!"comissionado".equals(e.getTipo())) {
+                    throw new IllegalArgumentException("Empregado nao eh comissionado.");
                 }
                 return String.format("%.2f", e.getComissao()).replace('.', ',');
+            case "metodopagamento": return e.getMetodoPagamento();
+            case "banco":
+                if (!"banco".equals(e.getMetodoPagamento())) {
+                    throw new IllegalArgumentException("Empregado nao recebe em banco.");
+                }
+                return e.getBanco();
+            case "agencia":
+                if (!"banco".equals(e.getMetodoPagamento())) {
+                    throw new IllegalArgumentException("Empregado nao recebe em banco.");
+                }
+                return e.getAgencia();
+            case "contacorrente":
+                if (!"banco".equals(e.getMetodoPagamento())) {
+                    throw new IllegalArgumentException("Empregado nao recebe em banco.");
+                }
+                return e.getContaCorrente();
             case "sindicalizado": return String.valueOf(e.isSindicalizado());
             case "idsindicato":
                 if (!e.isSindicalizado()) {
@@ -97,5 +113,13 @@ public class Facade {
 
     public void alteraEmpregado(String empId, String atributo, String valor, String idSindicato, String taxaSindical) {
         Database.alteraEmpregado(empId, atributo, valor, idSindicato, taxaSindical);
+    }
+
+    public void alteraEmpregado(String empId, String atributo, String valor, String valorAuxiliar) {
+        Database.alteraEmpregado(empId, atributo, valor, valorAuxiliar);
+    }
+
+    public void alteraEmpregado(String empId, String atributo, String valor1, String banco, String agencia, String contaCorrente) {
+        Database.alteraEmpregado(empId, atributo, valor1, banco, agencia, contaCorrente);
     }
 }
