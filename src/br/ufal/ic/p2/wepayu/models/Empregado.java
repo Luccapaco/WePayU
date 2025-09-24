@@ -16,10 +16,6 @@ public class Empregado implements Serializable {
     private boolean sindicalizado;
     private String idSindicato;
     private double taxaSindical;
-    private String metodoPagamento;
-    private String banco;
-    private String agencia;
-    private String contaCorrente;
     private List<CartaoPonto> cartoes = new ArrayList<>();
     private List<Venda> vendas = new ArrayList<>();
     private List<TaxaServico> taxas = new ArrayList<>();
@@ -79,10 +75,6 @@ public class Empregado implements Serializable {
         this.sindicalizado = false;
         this.idSindicato = null;
         this.taxaSindical = 0;
-        this.metodoPagamento = "emMaos";
-        this.banco = null;
-        this.agencia = null;
-        this.contaCorrente = null;
     }
 
     // ---- cartões ----
@@ -115,35 +107,7 @@ public class Empregado implements Serializable {
     public void setSindicalizado(boolean valor) { this.sindicalizado = valor; }
     public void setIdSindicato(String id) { this.idSindicato = id; }
     public void setTaxaSindical(double taxa) { this.taxaSindical = taxa; }
-    public void setMetodoPagamento(String metodoPagamento) { this.metodoPagamento = metodoPagamento; }
-    public void setBanco(String banco) { this.banco = banco; }
-    public void setAgencia(String agencia) { this.agencia = agencia; }
-    public void setContaCorrente(String contaCorrente) { this.contaCorrente = contaCorrente; }
-    public void setNome(String nome) {
-        if (nome == null || nome.trim().isEmpty()) {
-            throw new IllegalArgumentException("Nome nao pode ser nulo.");
-        }
-        this.nome = nome;
-    }
 
-    public void setEndereco(String endereco) {
-        if (endereco == null || endereco.trim().isEmpty()) {
-            throw new IllegalArgumentException("Endereco nao pode ser nulo.");
-        }
-        this.endereco = endereco;
-    }
-
-    public void setTipo(String tipo) {
-        this.tipo = tipo.toLowerCase();
-    }
-
-    public void setSalario(double salario) {
-        this.salario = salario;
-    }
-
-    public void setComissao(Double comissao) {
-        this.comissao = comissao;
-    }
     // ---- getters ----
     public String getId() { return id; }
     public String getNome() { return nome; }
@@ -154,10 +118,6 @@ public class Empregado implements Serializable {
     public boolean isSindicalizado() { return sindicalizado; }
     public String getIdSindicato() { return idSindicato; }
     public double getTaxaSindical() { return taxaSindical; }
-    public String getMetodoPagamento() { return metodoPagamento; }
-    public String getBanco() { return banco; }
-    public String getAgencia() { return agencia; }
-    public String getContaCorrente() { return contaCorrente; }
 
     public static void resetContador() {
         contadorId = 1;
