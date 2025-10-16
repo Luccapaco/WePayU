@@ -163,4 +163,12 @@ public class Empregado implements Serializable {
     public static void resetContador() {
         contadorId = 1;
     }
+
+    public static int getProximoId() {
+        return contadorId;
+    }
+
+    public static void definirProximoId(int valor) {
+        contadorId = valor;
+    }
 }
