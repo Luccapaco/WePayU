@@ -15,14 +15,12 @@ public class Facade {
 
     public String criarEmpregado(String nome, String endereco, String tipo, String salario) {
         Empregado e = new Empregado(nome, endereco, tipo, salario, null);
-        Database.adicionarEmpregado(e);
-        return e.getId();
+        return Database.adicionarEmpregado(e);
     }
 
     public String criarEmpregado(String nome, String endereco, String tipo, String salario, String comissao) {
         Empregado e = new Empregado(nome, endereco, tipo, salario, comissao);
-        Database.adicionarEmpregado(e);
-        return e.getId();
+        return Database.adicionarEmpregado(e);
     }
 
     public String getAtributoEmpregado(String empId, String atributo) {
@@ -80,6 +78,8 @@ public class Facade {
         Database.removerEmpregado(empId);
     }
 
+    public int getNumeroDeEmpregados() { return Database.getNumeroDeEmpregados(); }
+
     public void lancaCartao(String empId, String data, String horas) {
         Database.lancaCartao(empId, data, horas);
     }
@@ -130,4 +130,8 @@ public class Facade {
     public void alteraEmpregado(String empId, String atributo, String valor1, String banco, String agencia, String contaCorrente) {
         Database.alteraEmpregado(empId, atributo, valor1, banco, agencia, contaCorrente);
     }
+
+    public void undo() { Database.undo(); }
+
+    public void redo() { Database.redo(); }
 }
