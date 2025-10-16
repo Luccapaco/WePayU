@@ -12,19 +12,26 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Supplier;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 public class Database {
     private static final String ARQUIVO = "empregados.ser";
     private static Map<String, Empregado> empregados = new HashMap<>();
+    private static Deque<Snapshot> undoStack = new ArrayDeque<>();
+    private static Deque<Snapshot> redoStack = new ArrayDeque<>();
+    private static boolean sistemaEncerrado = false;
 
     static {
         carregar();
     }
 
-    public static void adicionarEmpregado(Empregado empregado) {
-        empregados.put(empregado.getId(), empregado);
+    public static String adicionarEmpregado(Empregado empregado) {
+        return executarComando(() -> {
+            empregados.put(empregado.getId(), empregado);
+            return empregado.getId();
+        });
     }
 
     public static Empregado getEmpregado(String id) {
@@ -39,13 +46,19 @@ public class Database {
     }
 
     public static void removerEmpregado(String id){
-        if(id == null || id.trim().isEmpty()){
-            throw new IllegalArgumentException("Identificacao do empregado nao pode ser nula.");
-        }
-        if (!empregados.containsKey(id)) {
-            throw new IllegalArgumentException("Empregado nao existe.");
-        }
-        empregados.remove(id);
+        executarComando(() -> {
+            if(id == null || id.trim().isEmpty()){
+                throw new IllegalArgumentException("Identificacao do empregado nao pode ser nula.");
+            }
+            if (!empregados.containsKey(id)) {
+                throw new IllegalArgumentException("Empregado nao existe.");
+            }
+            empregados.remove(id);
+        });
+    }
+
+    public static int getNumeroDeEmpregados() {
+        return empregados.size();
     }
 
     public static String getEmpregadoPorNome(String nome, int indice) {
@@ -72,84 +85,92 @@ public class Database {
     }
 
     public static void alteraEmpregado(String empId, String atributo, String valor) {
-        Empregado e = getEmpregado(empId);
+        executarComando(() -> {
+            Empregado e = getEmpregado(empId);
 
-        if (atributo == null || atributo.trim().isEmpty()) {
-            throw new IllegalArgumentException("Atributo nao pode ser nulo.");
-        }
+            if (atributo == null || atributo.trim().isEmpty()) {
+                throw new IllegalArgumentException("Atributo nao pode ser nulo.");
+            }
 
-        switch (atributo.toLowerCase()) {
-            case "nome":
-                e.setNome(valor);
-                break;
-            case "endereco":
-                e.setEndereco(valor);
-                break;
-            case "tipo":
-                alterarTipo(e, valor, null);
-                break;
-            case "salario":
-                e.setSalario(parseSalario(valor));
-                break;
-            case "comissao":
-                if (!"comissionado".equals(e.getTipo())) {
-                    throw new IllegalArgumentException("Empregado nao eh comissionado.");
-                }
-                e.setComissao(parseComissao(valor));
-                break;
-            case "metodopagamento":
-                alterarMetodoPagamento(e, valor, null, null, null);
-                break;
-            case "sindicalizado":
-                alterarSindicalizado(e, valor, null, null);
-                break;
-            default:
-                throw new IllegalArgumentException("Atributo nao existe.");
-        }
+            switch (atributo.toLowerCase()) {
+                case "nome":
+                    e.setNome(valor);
+                    break;
+                case "endereco":
+                    e.setEndereco(valor);
+                    break;
+                case "tipo":
+                    alterarTipo(e, valor, null);
+                    break;
+                case "salario":
+                    e.setSalario(parseSalario(valor));
+                    break;
+                case "comissao":
+                    if (!"comissionado".equals(e.getTipo())) {
+                        throw new IllegalArgumentException("Empregado nao eh comissionado.");
+                    }
+                    e.setComissao(parseComissao(valor));
+                    break;
+                case "metodopagamento":
+                    alterarMetodoPagamento(e, valor, null, null, null);
+                    break;
+                case "sindicalizado":
+                    alterarSindicalizado(e, valor, null, null);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Atributo nao existe.");
+            }
+        });
     }
 
     public static void alteraEmpregado(String empId, String atributo, String valor,
                                        String idSindicato, String taxaSindical) {
-        Empregado e = getEmpregado(empId);
+        executarComando(() -> {
+            Empregado e = getEmpregado(empId);
 
-        if (atributo == null || atributo.trim().isEmpty()) {
-            throw new IllegalArgumentException("Atributo nao pode ser nulo.");
-        }
+            if (atributo == null || atributo.trim().isEmpty()) {
+                throw new IllegalArgumentException("Atributo nao pode ser nulo.");
+            }
 
-        if (!"sindicalizado".equalsIgnoreCase(atributo)) {
-            throw new IllegalArgumentException("Atributo nao existe.");
-        }
+            if (!"sindicalizado".equalsIgnoreCase(atributo)) {
+                throw new IllegalArgumentException("Atributo nao existe.");
+            }
 
-        alterarSindicalizado(e, valor, idSindicato, taxaSindical);
+            alterarSindicalizado(e, valor, idSindicato, taxaSindical);
+        });
     }
 
     public static void alteraEmpregado(String empId, String atributo, String valor, String valorAuxiliar) {
-        Empregado e = getEmpregado(empId);
+        executarComando(() -> {
+            Empregado e = getEmpregado(empId);
 
-        if (atributo == null || atributo.trim().isEmpty()) {
-            throw new IllegalArgumentException("Atributo nao pode ser nulo.");
-        }
+            if (atributo == null || atributo.trim().isEmpty()) {
+                throw new IllegalArgumentException("Atributo nao pode ser nulo.");
+            }
 
-        if (!"tipo".equalsIgnoreCase(atributo)) {
-            throw new IllegalArgumentException("Atributo nao existe.");
-        }
+            if (!"tipo".equalsIgnoreCase(atributo)) {
+                throw new IllegalArgumentException("Atributo nao existe.");
+            }
 
-        alterarTipo(e, valor, valorAuxiliar);
+            alterarTipo(e, valor, valorAuxiliar);
+        });
     }
 
     public static void alteraEmpregado(String empId, String atributo, String valor1,
                                        String banco, String agencia, String contaCorrente) {
-        Empregado e = getEmpregado(empId);
+        executarComando(() -> {
+            Empregado e = getEmpregado(empId);
 
-        if (atributo == null || atributo.trim().isEmpty()) {
-            throw new IllegalArgumentException("Atributo nao pode ser nulo.");
-        }
+            if (atributo == null || atributo.trim().isEmpty()) {
+                throw new IllegalArgumentException("Atributo nao pode ser nulo.");
+            }
 
-        if (!"metodopagamento".equalsIgnoreCase(atributo)) {
-            throw new IllegalArgumentException("Atributo nao existe.");
-        }
+            if (!"metodopagamento".equalsIgnoreCase(atributo)) {
+                throw new IllegalArgumentException("Atributo nao existe.");
+            }
 
-        alterarMetodoPagamento(e, valor1, banco, agencia, contaCorrente);
+            alterarMetodoPagamento(e, valor1, banco, agencia, contaCorrente);
+        });
     }
 
     private static void alterarSindicalizado(Empregado e, String valor, String idSindicato, String taxaSindical) {
@@ -291,61 +312,67 @@ public class Database {
     }
 
     public static void lancaCartao(String empId, String data, String horas) {
-        if (empId == null || empId.trim().isEmpty()) {
-            throw new IllegalArgumentException("Identificacao do empregado nao pode ser nula.");
-        }
+        executarComando(() -> {
+            if (empId == null || empId.trim().isEmpty()) {
+                throw new IllegalArgumentException("Identificacao do empregado nao pode ser nula.");
+            }
 
-        Empregado e = getEmpregado(empId);
+            Empregado e = getEmpregado(empId);
 
-        if (!e.getTipo().equals("horista")) {
-            throw new IllegalArgumentException("Empregado nao eh horista.");
-        }
+            if (!e.getTipo().equals("horista")) {
+                throw new IllegalArgumentException("Empregado nao eh horista.");
+            }
 
-        validarData(data, false);
+            validarDataSimples(data);
 
-        CartaoPonto cartao = new CartaoPonto(data, horas);
-        e.adicionarCartao(cartao);
+            CartaoPonto cartao = new CartaoPonto(data, horas);
+            e.adicionarCartao(cartao);
+        });
     }
 
     public static void lancaVenda(String empId, String data, String valor) {
-        if (empId == null || empId.trim().isEmpty()) {
-            throw new IllegalArgumentException("Identificacao do empregado nao pode ser nula.");
-        }
+        executarComando(() -> {
+            if (empId == null || empId.trim().isEmpty()) {
+                throw new IllegalArgumentException("Identificacao do empregado nao pode ser nula.");
+            }
 
-        Empregado e = getEmpregado(empId);
+            Empregado e = getEmpregado(empId);
 
-        if (!e.getTipo().equals("comissionado")) {
-            throw new IllegalArgumentException("Empregado nao eh comissionado.");
-        }
+            if (!e.getTipo().equals("comissionado")) {
+                throw new IllegalArgumentException("Empregado nao eh comissionado.");
+            }
 
-        validarData(data, false);
+            validarDataSimples(data);
 
-        Venda v = new Venda(data, valor);
-        e.adicionarVenda(v);
+            Venda v = new Venda(data, valor);
+            e.adicionarVenda(v);
+        });
     }
 
 
     public static void lancaTaxaServico(String membroId, String data, String valor) {
-        if (membroId == null || membroId.trim().isEmpty()) {
-            throw new IllegalArgumentException("Identificacao do membro nao pode ser nula.");
-        }
-
-        Empregado e = null;
-        for (Empregado emp : empregados.values()) {
-            if (emp.isSindicalizado() && membroId.equals(emp.getIdSindicato())) {
-                e = emp;
-                break;
+        executarComando(() -> {
+            if (membroId == null || membroId.trim().isEmpty()) {
+                throw new IllegalArgumentException("Identificacao do membro nao pode ser nula.");
             }
-        }
+
+            Empregado e = null;
+            for (Empregado emp : empregados.values()) {
+                if (emp.isSindicalizado() && membroId.equals(emp.getIdSindicato())) {
+                    e = emp;
+                    break;
+                }
+            }
 
         if (e == null) {
             throw new IllegalArgumentException("Membro nao existe.");
         }
 
-        validarData(data, false);
+            validarDataSimples(data);
 
-        TaxaServico t = new TaxaServico(data, valor);
-        e.adicionarTaxa(t);
+            TaxaServico t = new TaxaServico(data, valor);
+            e.adicionarTaxa(t);
+        });
     }
 
     public static String getHorasNormaisTrabalhadas(String empId, String dataInicial, String dataFinal) {
@@ -413,12 +440,14 @@ public class Database {
     }
 
     public static void rodaFolha(String data, String saida) {
-        FolhaPagamento folha = calcularFolha(data);
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(saida))) {
-            writer.write(folha.gerarRelatorio());
-        } catch (IOException e) {
-            throw new RuntimeException("Erro ao escrever arquivo de folha.", e);
-        }
+        executarComando(() -> {
+            FolhaPagamento folha = calcularFolha(data);
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(saida))) {
+                writer.write(folha.gerarRelatorio());
+            } catch (IOException e) {
+                throw new RuntimeException("Erro ao escrever arquivo de folha.", e);
+            }
+        });
     }
 
     private static FolhaPagamento calcularFolha(String data) {
@@ -499,6 +528,18 @@ public class Database {
         } catch (ParseException e) {
             if (inicial) throw new IllegalArgumentException("Data inicial invalida.");
             else throw new IllegalArgumentException("Data final invalida.");
+        }
+    }
+
+    private static Date validarDataSimples(String data) {
+        try {
+            return validarData(data, false);
+        } catch (IllegalArgumentException e) {
+            String mensagem = e.getMessage();
+            if ("Data final invalida.".equals(mensagem) || "Data inicial invalida.".equals(mensagem)) {
+                throw new IllegalArgumentException("Data invalida.");
+            }
+            throw e;
         }
     }
 
@@ -1056,6 +1097,95 @@ public class Database {
         }
     }
 
+    public static void undo() {
+        verificarSistemaAtivo();
+        if (undoStack.isEmpty()) {
+            throw new IllegalArgumentException("Nao ha comando a desfazer.");
+        }
+
+        Snapshot atual = criarSnapshot();
+        Snapshot anterior = undoStack.pop();
+        redoStack.push(atual);
+        restaurarSnapshot(anterior);
+    }
+
+    public static void redo() {
+        verificarSistemaAtivo();
+        if (redoStack.isEmpty()) {
+            throw new IllegalArgumentException("Nao ha comando a refazer.");
+        }
+
+        Snapshot atual = criarSnapshot();
+        Snapshot proximo = redoStack.pop();
+        undoStack.push(atual);
+        restaurarSnapshot(proximo);
+    }
+
+    private static void verificarSistemaAtivo() {
+        if (sistemaEncerrado) {
+            throw new IllegalStateException("Nao pode dar comandos depois de encerrarSistema.");
+        }
+    }
+
+    private static void executarComando(Runnable acao) {
+        verificarSistemaAtivo();
+        Snapshot anterior = criarSnapshot();
+        try {
+            acao.run();
+            undoStack.push(anterior);
+            redoStack.clear();
+        } catch (RuntimeException e) {
+            restaurarSnapshot(anterior);
+            throw e;
+        }
+    }
+
+    private static <T> T executarComando(Supplier<T> acao) {
+        verificarSistemaAtivo();
+        Snapshot anterior = criarSnapshot();
+        try {
+            T resultado = acao.get();
+            undoStack.push(anterior);
+            redoStack.clear();
+            return resultado;
+        } catch (RuntimeException e) {
+            restaurarSnapshot(anterior);
+            throw e;
+        }
+    }
+
+    private static Snapshot criarSnapshot() {
+        return new Snapshot(copiarEmpregados(), Empregado.getProximoId());
+    }
+
+    private static void restaurarSnapshot(Snapshot snapshot) {
+        empregados = snapshot.empregados;
+        Empregado.definirProximoId(snapshot.proximoId);
+    }
+
+    private static Map<String, Empregado> copiarEmpregados() {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(baos);
+            out.writeObject(empregados);
+            out.flush();
+            ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
+            return (Map<String, Empregado>) in.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException("Erro ao copiar estado dos empregados.", e);
+        }
+    }
+
+    private static class Snapshot {
+        private final Map<String, Empregado> empregados;
+        private final int proximoId;
+
+        private Snapshot(Map<String, Empregado> empregados, int proximoId) {
+            this.empregados = empregados;
+            this.proximoId = proximoId;
+        }
+    }
+
     private static void carregar() {
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(ARQUIVO))) {
             Object obj = in.readObject();
@@ -1065,6 +1195,9 @@ public class Database {
         } catch (Exception e) {
             empregados = new HashMap<>();
         }
+        sistemaEncerrado = false;
+        undoStack.clear();
+        redoStack.clear();
     }
 
     private static void salvar() {
@@ -1077,14 +1210,26 @@ public class Database {
 
     public static void encerrarSistema() {
         salvar();
+        sistemaEncerrado = true;
+        undoStack.clear();
+        redoStack.clear();
     }
 
     public static void zerarSistema() {
-        empregados.clear();
-        Empregado.resetContador();
-        File f = new File(ARQUIVO);
-        if (f.exists()) {
-            f.delete();
+        Snapshot anterior = criarSnapshot();
+        try {
+            empregados.clear();
+            Empregado.resetContador();
+            File f = new File(ARQUIVO);
+            if (f.exists()) {
+                f.delete();
+            }
+            undoStack.push(anterior);
+            redoStack.clear();
+        } catch (RuntimeException e) {
+            restaurarSnapshot(anterior);
+            throw e;
         }
+        sistemaEncerrado = false;
     }
 }
