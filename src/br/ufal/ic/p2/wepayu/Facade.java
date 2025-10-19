@@ -5,6 +5,10 @@ import br.ufal.ic.p2.wepayu.models.Empregado;
 
 
 public class Facade {
+    public Facade() {
+        Database.iniciarNovoScript();
+    }
+
     public void zerarSistema() {
         Database.zerarSistema();
     }
