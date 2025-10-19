@@ -5,6 +5,10 @@ import br.ufal.ic.p2.wepayu.models.Empregado;
 
 
 public class Facade {
+    public Facade() {
+        Database.iniciarNovoScript();
+    }
+
     public void zerarSistema() {
         Database.zerarSistema();
     }
@@ -55,6 +59,8 @@ public class Facade {
                     throw new IllegalArgumentException("Empregado nao recebe em banco.");
                 }
                 return e.getContaCorrente();
+            case "agendapagamento":
+                return e.getAgendaPagamento();
             case "sindicalizado": return String.valueOf(e.isSindicalizado());
             case "idsindicato":
                 if (!e.isSindicalizado()) {
