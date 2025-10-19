@@ -22,6 +22,11 @@ public class Database {
     private static Deque<Snapshot> undoStack = new ArrayDeque<>();
     private static Deque<Snapshot> redoStack = new ArrayDeque<>();
     private static boolean sistemaEncerrado = false;
+    private static boolean descartarHistoricoNoProximoZerar = true;
+
+    public static void iniciarNovoScript() {
+        descartarHistoricoNoProximoZerar = true;
+    }
 
     static {
         carregar();
@@ -1161,6 +1166,9 @@ public class Database {
     private static void restaurarSnapshot(Snapshot snapshot) {
         empregados = snapshot.empregados;
         Empregado.definirProximoId(snapshot.proximoId);
+        if (snapshot.historicoUndo != null) {
+            undoStack = copiarPilha(snapshot.historicoUndo);
+        }
     }
 
     private static Map<String, Empregado> copiarEmpregados() {
@@ -1176,13 +1184,26 @@ public class Database {
         }
     }
 
+    private static Deque<Snapshot> copiarPilha(Deque<Snapshot> origem) {
+        if (origem == null || origem.isEmpty()) {
+            return new ArrayDeque<>();
+        }
+        return new ArrayDeque<>(origem);
+    }
+
     private static class Snapshot {
         private final Map<String, Empregado> empregados;
         private final int proximoId;
+        private final Deque<Snapshot> historicoUndo;
 
         private Snapshot(Map<String, Empregado> empregados, int proximoId) {
+            this(empregados, proximoId, null);
+        }
+
+        private Snapshot(Map<String, Empregado> empregados, int proximoId, Deque<Snapshot> historicoUndo) {
             this.empregados = empregados;
             this.proximoId = proximoId;
+            this.historicoUndo = historicoUndo;
         }
     }
 
@@ -1198,6 +1219,7 @@ public class Database {
         sistemaEncerrado = false;
         undoStack.clear();
         redoStack.clear();
+        descartarHistoricoNoProximoZerar = true;
     }
 
     private static void salvar() {
@@ -1213,6 +1235,7 @@ public class Database {
         sistemaEncerrado = true;
         undoStack.clear();
         redoStack.clear();
+        descartarHistoricoNoProximoZerar = true;
     }
 
     public static void zerarSistema() {
@@ -1221,13 +1244,26 @@ public class Database {
             sistemaEncerrado = false;
             undoStack.clear();
             redoStack.clear();
+            descartarHistoricoNoProximoZerar = false;
             return;
         }
 
-        executarComando(() -> {
+        verificarSistemaAtivo();
+        Snapshot anterior = criarSnapshot();
+        Deque<Snapshot> historicoAnterior = descartarHistoricoNoProximoZerar
+                ? new ArrayDeque<>()
+                : copiarPilha(undoStack);
+        try {
             limparDadosPersistidos();
             sistemaEncerrado = false;
-        });
+            undoStack.clear();
+            redoStack.clear();
+            undoStack.push(new Snapshot(anterior.empregados, anterior.proximoId, historicoAnterior));
+            descartarHistoricoNoProximoZerar = false;
+        } catch (RuntimeException e) {
+            restaurarSnapshot(anterior);
+            throw e;
+        }
     }
 
     private static void limparDadosPersistidos() {
