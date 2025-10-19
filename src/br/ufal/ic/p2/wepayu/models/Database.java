@@ -364,9 +364,9 @@ public class Database {
                 }
             }
 
-        if (e == null) {
-            throw new IllegalArgumentException("Membro nao existe.");
-        }
+            if (e == null) {
+                throw new IllegalArgumentException("Membro nao existe.");
+            }
 
             validarDataSimples(data);
 
@@ -1216,20 +1216,26 @@ public class Database {
     }
 
     public static void zerarSistema() {
-        Snapshot anterior = criarSnapshot();
-        try {
-            empregados.clear();
-            Empregado.resetContador();
-            File f = new File(ARQUIVO);
-            if (f.exists()) {
-                f.delete();
-            }
-            undoStack.push(anterior);
+        if (sistemaEncerrado) {
+            limparDadosPersistidos();
+            sistemaEncerrado = false;
+            undoStack.clear();
             redoStack.clear();
-        } catch (RuntimeException e) {
-            restaurarSnapshot(anterior);
-            throw e;
+            return;
         }
-        sistemaEncerrado = false;
+
+        executarComando(() -> {
+            limparDadosPersistidos();
+            sistemaEncerrado = false;
+        });
+    }
+
+    private static void limparDadosPersistidos() {
+        empregados.clear();
+        Empregado.resetContador();
+        File f = new File(ARQUIVO);
+        if (f.exists()) {
+            f.delete();
+        }
     }
 }
