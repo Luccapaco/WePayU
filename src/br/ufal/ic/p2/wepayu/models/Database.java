@@ -23,17 +23,65 @@ public class Database {
     private static Deque<Snapshot> redoStack = new ArrayDeque<>();
     private static boolean sistemaEncerrado = false;
     private static boolean descartarHistoricoNoProximoZerar = true;
+    private static final String AGENDA_SEMANAL = "semanal 5";
+    private static final String AGENDA_BISEMANAL = "semanal 2 5";
+    private static final String AGENDA_MENSAL = "mensal $";
+    private static final Map<String, String> AGENDAS_DISPONIVEIS = new HashMap<>();
 
     public static void iniciarNovoScript() {
         descartarHistoricoNoProximoZerar = true;
     }
 
     static {
+        registrarAgendaPadrao(AGENDA_SEMANAL);
+        registrarAgendaPadrao(AGENDA_BISEMANAL);
+        registrarAgendaPadrao(AGENDA_MENSAL);
         carregar();
+    }
+
+    private static void registrarAgendaPadrao(String agenda) {
+        AGENDAS_DISPONIVEIS.put(agenda.toLowerCase(Locale.ROOT), agenda);
+    }
+
+    private static String validarAgendaPagamento(String agenda) {
+        if (agenda == null) {
+            throw new IllegalArgumentException("Agenda de pagamento nao esta disponivel");
+        }
+        String chave = agenda.trim().toLowerCase(Locale.ROOT);
+        if (chave.isEmpty()) {
+            throw new IllegalArgumentException("Agenda de pagamento nao esta disponivel");
+        }
+        String disponivel = AGENDAS_DISPONIVEIS.get(chave);
+        if (disponivel == null) {
+            throw new IllegalArgumentException("Agenda de pagamento nao esta disponivel");
+        }
+        return disponivel;
+    }
+
+    private static String agendaPadrao(String tipo) {
+        if ("horista".equals(tipo)) {
+            return AGENDA_SEMANAL;
+        }
+        if ("assalariado".equals(tipo)) {
+            return AGENDA_MENSAL;
+        }
+        if ("comissionado".equals(tipo)) {
+            return AGENDA_BISEMANAL;
+        }
+        return AGENDA_SEMANAL;
+    }
+
+    private static void garantirAgenda(Empregado empregado) {
+        if (empregado.getAgendaPagamento() == null || empregado.getAgendaPagamento().trim().isEmpty()) {
+            empregado.setAgendaPagamento(agendaPadrao(empregado.getTipo()));
+        } else {
+            empregado.setAgendaPagamento(validarAgendaPagamento(empregado.getAgendaPagamento()));
+        }
     }
 
     public static String adicionarEmpregado(Empregado empregado) {
         return executarComando(() -> {
+            garantirAgenda(empregado);
             empregados.put(empregado.getId(), empregado);
             return empregado.getId();
         });
@@ -119,6 +167,9 @@ public class Database {
                 case "metodopagamento":
                     alterarMetodoPagamento(e, valor, null, null, null);
                     break;
+                case "agendapagamento":
+                    alterarAgendaPagamento(e, valor);
+                    break;
                 case "sindicalizado":
                     alterarSindicalizado(e, valor, null, null);
                     break;
@@ -153,11 +204,13 @@ public class Database {
                 throw new IllegalArgumentException("Atributo nao pode ser nulo.");
             }
 
-            if (!"tipo".equalsIgnoreCase(atributo)) {
+            if ("tipo".equalsIgnoreCase(atributo)) {
+                alterarTipo(e, valor, valorAuxiliar);
+            } else if ("agendapagamento".equalsIgnoreCase(atributo)) {
+                alterarAgendaPagamento(e, valor);
+            } else {
                 throw new IllegalArgumentException("Atributo nao existe.");
             }
-
-            alterarTipo(e, valor, valorAuxiliar);
         });
     }
 
@@ -230,15 +283,18 @@ public class Database {
                 e.setTipo("horista");
                 e.setSalario(salarioHorista);
                 e.setComissao(null);
+                e.setAgendaPagamento(AGENDA_SEMANAL);
                 break;
             case "assalariado":
                 e.setTipo("assalariado");
                 e.setComissao(null);
+                e.setAgendaPagamento(AGENDA_MENSAL);
                 break;
             case "comissionado":
                 double novaComissao = parseComissao(valorAuxiliar);
                 e.setTipo("comissionado");
                 e.setComissao(novaComissao);
+                e.setAgendaPagamento(AGENDA_BISEMANAL);
                 break;
             default:
                 throw new IllegalArgumentException("Tipo invalido.");
@@ -278,6 +334,10 @@ public class Database {
         } else {
             throw new IllegalArgumentException("Metodo de pagamento invalido.");
         }
+    }
+
+    private static void alterarAgendaPagamento(Empregado e, String agenda) {
+        e.setAgendaPagamento(validarAgendaPagamento(agenda));
     }
 
     private static double parseSalario(String valor) {
@@ -606,17 +666,7 @@ public class Database {
             processarComissionados();
         }
 
-        private boolean isSexta(LocalDate dia) {
-            return dia.getDayOfWeek() == DayOfWeek.FRIDAY;
-        }
-
         private void processarHoristas() {
-            if (!isSexta(data)) {
-                return;
-            }
-
-            LocalDate inicioPeriodo = data.minusDays(6);
-
             List<Empregado> empregadosHoristas = new ArrayList<>();
             for (Empregado e : empregados.values()) {
                 if ("horista".equals(e.getTipo())) {
@@ -627,6 +677,15 @@ public class Database {
             empregadosHoristas.sort(Comparator.comparing(Empregado::getNome, String.CASE_INSENSITIVE_ORDER));
 
             for (Empregado e : empregadosHoristas) {
+                if (!devePagarHoje(e, data)) {
+                    continue;
+                }
+
+                LocalDate inicioPeriodo = obterInicioPeriodo(e, data);
+                if (inicioPeriodo == null) {
+                    continue;
+                }
+
                 Map<LocalDate, Double> horasPorDia = new HashMap<>();
                 for (CartaoPonto cartao : e.getCartoes()) {
                     LocalDate diaCartao = parseData(cartao.getData());
@@ -661,7 +720,7 @@ public class Database {
                 if (e.isSindicalizado() && bruto.compareTo(BigDecimal.ZERO) > 0) {
                     BigDecimal taxas = calcularTaxasSindicaisHorista(e, data);
                     descontos = descontos.add(taxas);
-                    BigDecimal extrasServico = calcularTaxasServico(e, obterUltimoPagamentoHorista(e, data), data);
+                    BigDecimal extrasServico = calcularTaxasServico(e, ajustarUltimoPagamento(obterUltimoPagamentoHorista(e, data)), data);
                     descontos = descontos.add(extrasServico);
                     if (descontos.compareTo(bruto) > 0) {
                         descontos = bruto;
@@ -669,7 +728,7 @@ public class Database {
                     liquido = bruto.subtract(descontos);
                 }
 
-                PagamentoHorista registro = new PagamentoHorista(e, (int)Math.round(horasNormais), (int)Math.round(horasExtras), bruto, descontos, liquido);
+                PagamentoHorista registro = new PagamentoHorista(e, (int) Math.round(horasNormais), (int) Math.round(horasExtras), bruto, descontos, liquido);
                 horistas.add(registro);
 
                 totalHoras += registro.horasNormais;
@@ -681,10 +740,6 @@ public class Database {
         }
 
         private void processarAssalariados() {
-            if (!isUltimoDiaMes(data)) {
-                return;
-            }
-
             List<Empregado> empregadosAssalariados = new ArrayList<>();
             for (Empregado e : empregados.values()) {
                 if ("assalariado".equals(e.getTipo())) {
@@ -695,13 +750,17 @@ public class Database {
             empregadosAssalariados.sort(Comparator.comparing(Empregado::getNome, String.CASE_INSENSITIVE_ORDER));
 
             for (Empregado e : empregadosAssalariados) {
-                BigDecimal bruto = truncar(BigDecimal.valueOf(e.getSalario()));
+                if (!devePagarHoje(e, data)) {
+                    continue;
+                }
+
+                BigDecimal bruto = calcularPagamentoAssalariado(e);
                 BigDecimal descontos = BigDecimal.ZERO;
 
-                if (e.isSindicalizado()) {
+                if (e.isSindicalizado() && bruto.compareTo(BigDecimal.ZERO) > 0) {
                     BigDecimal taxas = calcularTaxasSindicaisAssalariado(e, data);
                     descontos = descontos.add(taxas);
-                    BigDecimal extrasServico = calcularTaxasServico(e, obterUltimoPagamentoAssalariado(data), data);
+                    BigDecimal extrasServico = calcularTaxasServico(e, ajustarUltimoPagamento(obterUltimoPagamentoPorAgenda(e, data)), data);
                     descontos = descontos.add(extrasServico);
                     if (descontos.compareTo(bruto) > 0) {
                         descontos = bruto;
@@ -719,14 +778,6 @@ public class Database {
         }
 
         private void processarComissionados() {
-            if (!isSexta(data)) {
-                return;
-            }
-
-            if (!isPagamentoQuinzenal(data)) {
-                return;
-            }
-
             List<Empregado> empregadosComissionados = new ArrayList<>();
             for (Empregado e : empregados.values()) {
                 if ("comissionado".equals(e.getTipo())) {
@@ -736,10 +787,18 @@ public class Database {
 
             empregadosComissionados.sort(Comparator.comparing(Empregado::getNome, String.CASE_INSENSITIVE_ORDER));
 
-            LocalDate inicioPeriodo = data.minusDays(13);
-            LocalDate ultimoPagamento = obterUltimoPagamentoQuinzenal(data);
-
             for (Empregado e : empregadosComissionados) {
+                if (!devePagarHoje(e, data)) {
+                    continue;
+                }
+
+                LocalDate inicioPeriodo = obterInicioPeriodo(e, data);
+                if (inicioPeriodo == null) {
+                    continue;
+                }
+
+                LocalDate ultimoPagamento = ajustarUltimoPagamento(obterUltimoPagamentoPorAgenda(e, data));
+
                 BigDecimal fixo = calcularSalarioFixoComissionado(e);
                 BigDecimal vendas = BigDecimal.ZERO;
                 for (Venda v : e.getVendas()) {
@@ -781,6 +840,103 @@ public class Database {
             }
         }
 
+        private boolean devePagarHoje(Empregado e, LocalDate dia) {
+            String agenda = e.getAgendaPagamento();
+            if (AGENDA_SEMANAL.equals(agenda)) {
+                return dia.getDayOfWeek() == DayOfWeek.FRIDAY;
+            }
+            if (AGENDA_BISEMANAL.equals(agenda)) {
+                return dia.getDayOfWeek() == DayOfWeek.FRIDAY && isPagamentoQuinzenal(dia);
+            }
+            if (AGENDA_MENSAL.equals(agenda)) {
+                return isUltimoDiaMes(dia);
+            }
+            return false;
+        }
+
+        private LocalDate obterInicioPeriodo(Empregado e, LocalDate dia) {
+            String agenda = e.getAgendaPagamento();
+            if (AGENDA_SEMANAL.equals(agenda)) {
+                return dia.minusDays(6);
+            }
+            if (AGENDA_BISEMANAL.equals(agenda)) {
+                return dia.minusDays(13);
+            }
+            if (AGENDA_MENSAL.equals(agenda)) {
+                return dia.withDayOfMonth(1);
+            }
+            return null;
+        }
+
+        private BigDecimal calcularPagamentoAssalariado(Empregado e) {
+            double salarioMensal = e.getSalario();
+            String agenda = e.getAgendaPagamento();
+            if (AGENDA_SEMANAL.equals(agenda)) {
+                return calcularValorSemanal(salarioMensal);
+            }
+            if (AGENDA_BISEMANAL.equals(agenda)) {
+                return calcularValorBiSemanal(salarioMensal);
+            }
+            return truncar(BigDecimal.valueOf(salarioMensal));
+        }
+
+        private BigDecimal calcularValorSemanal(double salarioMensal) {
+            BigDecimal salario = BigDecimal.valueOf(salarioMensal);
+            BigDecimal anual = salario.multiply(BigDecimal.valueOf(12));
+            BigDecimal semanal = anual.divide(BigDecimal.valueOf(52), 10, RoundingMode.HALF_UP);
+            return truncar(semanal);
+        }
+
+        private BigDecimal calcularValorBiSemanal(double salarioMensal) {
+            BigDecimal salario = BigDecimal.valueOf(salarioMensal);
+            BigDecimal anual = salario.multiply(BigDecimal.valueOf(12));
+            BigDecimal quinzenal = anual.divide(BigDecimal.valueOf(26), 10, RoundingMode.HALF_UP);
+            return truncar(quinzenal);
+        }
+
+        private LocalDate ajustarUltimoPagamento(LocalDate ultimo) {
+            if (ultimo == null) {
+                return null;
+            }
+            LocalDate base = LocalDate.of(2005, 1, 1);
+            if (ultimo.isBefore(base)) {
+                return null;
+            }
+            return ultimo;
+        }
+
+        private LocalDate obterUltimoPagamentoPorAgenda(Empregado e, LocalDate pagamento) {
+            String agenda = e.getAgendaPagamento();
+            if (AGENDA_SEMANAL.equals(agenda)) {
+                return pagamento.minusWeeks(1);
+            }
+            if (AGENDA_BISEMANAL.equals(agenda)) {
+                return pagamento.minusWeeks(2);
+            }
+            if (AGENDA_MENSAL.equals(agenda)) {
+                LocalDate anterior = pagamento.minusMonths(1);
+                return anterior.withDayOfMonth(anterior.lengthOfMonth());
+            }
+            return null;
+        }
+
+        private LocalDate determinarDiaPagamentoHorista(String agenda, LocalDate dataCartao) {
+            if (AGENDA_SEMANAL.equals(agenda)) {
+                return proximaSexta(dataCartao);
+            }
+            if (AGENDA_BISEMANAL.equals(agenda)) {
+                LocalDate dia = proximaSexta(dataCartao);
+                while (!isPagamentoQuinzenal(dia)) {
+                    dia = dia.plusWeeks(1);
+                }
+                return dia;
+            }
+            if (AGENDA_MENSAL.equals(agenda)) {
+                return dataCartao.withDayOfMonth(dataCartao.lengthOfMonth());
+            }
+            return null;
+        }
+
         private BigDecimal calcularTaxasSindicaisHorista(Empregado e, LocalDate pagamento) {
             LocalDate ultimo = obterUltimoPagamentoHorista(e, pagamento);
             if (ultimo == null) {
@@ -796,9 +952,9 @@ public class Database {
         }
 
         private BigDecimal calcularTaxasSindicaisAssalariado(Empregado e, LocalDate pagamento) {
-            LocalDate ultimo = obterUltimoPagamentoAssalariado(pagamento);
+            LocalDate ultimo = ajustarUltimoPagamento(obterUltimoPagamentoPorAgenda(e, pagamento));
+            LocalDate inicio = LocalDate.of(2005, 1, 1);
             if (ultimo == null) {
-                LocalDate inicio = LocalDate.of(2005, 1, 1);
                 long dias = ChronoUnit.DAYS.between(inicio.minusDays(1), pagamento);
                 return truncar(BigDecimal.valueOf(e.getTaxaSindical()).multiply(BigDecimal.valueOf(dias)));
             }
@@ -807,9 +963,9 @@ public class Database {
         }
 
         private BigDecimal calcularTaxasSindicaisComissionado(Empregado e, LocalDate pagamento) {
-            LocalDate ultimo = obterUltimoPagamentoQuinzenal(pagamento);
+            LocalDate ultimo = ajustarUltimoPagamento(obterUltimoPagamentoPorAgenda(e, pagamento));
+            LocalDate inicio = LocalDate.of(2005, 1, 1);
             if (ultimo == null) {
-                LocalDate inicio = LocalDate.of(2005, 1, 1);
                 long dias = ChronoUnit.DAYS.between(inicio.minusDays(1), pagamento);
                 return truncar(BigDecimal.valueOf(e.getTaxaSindical()).multiply(BigDecimal.valueOf(dias)));
             }
@@ -837,9 +993,9 @@ public class Database {
             Set<LocalDate> diasPagamento = new HashSet<>();
             for (CartaoPonto cartao : e.getCartoes()) {
                 LocalDate dataCartao = parseData(cartao.getData());
-                LocalDate sexta = proximaSexta(dataCartao);
-                if (!sexta.isAfter(pagamento)) {
-                    diasPagamento.add(sexta);
+                LocalDate diaPagamento = determinarDiaPagamentoHorista(e.getAgendaPagamento(), dataCartao);
+                if (diaPagamento != null && !diaPagamento.isAfter(pagamento)) {
+                    diasPagamento.add(diaPagamento);
                 }
             }
 
@@ -883,33 +1039,16 @@ public class Database {
             return dias >= 13 && dias % 14 == 13;
         }
 
-        private LocalDate obterUltimoPagamentoAssalariado(LocalDate pagamento) {
-            LocalDate anterior = pagamento.minusDays(pagamento.getDayOfMonth());
-            if (anterior.getDayOfMonth() == anterior.lengthOfMonth()) {
-                return anterior;
-            }
-            return anterior.withDayOfMonth(anterior.lengthOfMonth());
-        }
-
-        private LocalDate obterUltimoPagamentoQuinzenal(LocalDate pagamento) {
-            LocalDate inicio = LocalDate.of(2005, 1, 14);
-            if (!pagamento.isAfter(inicio)) {
-                return null;
-            }
-            LocalDate dia = inicio;
-            LocalDate ultimo = null;
-            while (!dia.isAfter(pagamento.minusDays(14))) {
-                ultimo = dia;
-                dia = dia.plusDays(14);
-            }
-            return ultimo;
-        }
-
         private BigDecimal calcularSalarioFixoComissionado(Empregado e) {
-            BigDecimal salario = BigDecimal.valueOf(e.getSalario());
-            BigDecimal anual = salario.multiply(BigDecimal.valueOf(12));
-            BigDecimal pagamentos = anual.divide(BigDecimal.valueOf(26), 10, RoundingMode.HALF_UP);
-            return truncar(pagamentos);
+            double salarioMensal = e.getSalario();
+            String agenda = e.getAgendaPagamento();
+            if (AGENDA_SEMANAL.equals(agenda)) {
+                return calcularValorSemanal(salarioMensal);
+            }
+            if (AGENDA_BISEMANAL.equals(agenda)) {
+                return calcularValorBiSemanal(salarioMensal);
+            }
+            return truncar(BigDecimal.valueOf(salarioMensal));
         }
 
         private BigDecimal totalBruto() {
@@ -1212,6 +1351,9 @@ public class Database {
             Object obj = in.readObject();
             if (obj instanceof Map) {
                 empregados = (Map<String, Empregado>) obj;
+                for (Empregado e : empregados.values()) {
+                    garantirAgenda(e);
+                }
             }
         } catch (Exception e) {
             empregados = new HashMap<>();

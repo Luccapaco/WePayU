@@ -20,6 +20,7 @@ public class Empregado implements Serializable {
     private String banco;
     private String agencia;
     private String contaCorrente;
+    private String agendaPagamento;
     private List<CartaoPonto> cartoes = new ArrayList<>();
     private List<Venda> vendas = new ArrayList<>();
     private List<TaxaServico> taxas = new ArrayList<>();
@@ -83,6 +84,19 @@ public class Empregado implements Serializable {
         this.banco = null;
         this.agencia = null;
         this.contaCorrente = null;
+        switch (this.tipo) {
+            case "horista":
+                this.agendaPagamento = "semanal 5";
+                break;
+            case "assalariado":
+                this.agendaPagamento = "mensal $";
+                break;
+            case "comissionado":
+                this.agendaPagamento = "semanal 2 5";
+                break;
+            default:
+                this.agendaPagamento = null;
+        }
     }
 
     // ---- cartões ----
@@ -119,6 +133,7 @@ public class Empregado implements Serializable {
     public void setBanco(String banco) { this.banco = banco; }
     public void setAgencia(String agencia) { this.agencia = agencia; }
     public void setContaCorrente(String contaCorrente) { this.contaCorrente = contaCorrente; }
+    public void setAgendaPagamento(String agendaPagamento) { this.agendaPagamento = agendaPagamento; }
     public void setNome(String nome) {
         if (nome == null || nome.trim().isEmpty()) {
             throw new IllegalArgumentException("Nome nao pode ser nulo.");
@@ -159,6 +174,7 @@ public class Empregado implements Serializable {
     public String getBanco() { return banco; }
     public String getAgencia() { return agencia; }
     public String getContaCorrente() { return contaCorrente; }
+    public String getAgendaPagamento() { return agendaPagamento; }
 
     public static void resetContador() {
         contadorId = 1;
