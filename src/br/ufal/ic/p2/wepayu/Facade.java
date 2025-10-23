@@ -17,6 +17,10 @@ public class Facade {
         Database.encerrarSistema();
     }
 
+    public void criarAgendaDePagamentos(String descricao) {
+        Database.criarAgendaDePagamentos(descricao);
+    }
+
     public String criarEmpregado(String nome, String endereco, String tipo, String salario) {
         Empregado e = new Empregado(nome, endereco, tipo, salario, null);
         return Database.adicionarEmpregado(e);
